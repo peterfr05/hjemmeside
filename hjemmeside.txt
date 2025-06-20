@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Den Skumle Bager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcf8f3; /* Blød baggrundsfarve */
+            color: #333;
+        }
+        .hero-section {
+            /* Brug det lokale baggrundsbillede */
+            background-image: url('serenity-mitchell-s_98hy3r1-E-unsplash.jpg');
+            background-size: cover;
+            background-position: center;
+            height: 500px; /* Juster højden efter behov */
+        }
+        .rounded-xl {
+            border-radius: 1rem; /* Større afrunding */
+        }
+        .shadow-lg {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .square-video {
+            width: 100%; /* Videoen fylder nu hele den venstre halvdel */
+            height: auto; /* Juster højden automatisk */
+            max-height: 400px; /* Sæt en maks højde for at forhindre for stor video */
+            object-fit: cover; /* Sørg for at videoen dækker hele området uden at blive strakt */
+        }
+        /* Skjul alle indholdssektioner som standard, JavaScript vil vise den aktive */
+        .content-section:not(.active-section) {
+            display: none;
+        }
+        /* Custom styles for alert messages */
+        .alert-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            min-width: 250px; /* Sikrer at beskeden har en vis bredde */
+            text-align: center;
+        }
+        .alert-message.show {
+            opacity: 1;
+        }
+
+        /* --- Styles til MobilePay modal --- */
+        .mobilepay-modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001; /* Højere end andre modals */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .mobilepay-modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .mobilepay-modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            text-align: center;
+        }
+        /* Øget hitbox for nav-links */
+        .nav-link {
+            padding: 0.5rem 0.75rem; /* Giver mere plads omkring teksten */
+            display: inline-block; /* Sørger for at paddingen virker */
+        }
+        @media (min-width: 768px) { /* Anvend kun på desktop for at undgå at ødelægge mobil layout */
+            .nav-link {
+                padding: 0.75rem 1rem; /* Endnu mere padding på større skærme */
+            }
+        }
+
+        /* Modal styles for login/register/add payment/forgot password */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1002; /* Higher than cart/payment modals */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            max-width: 400px;
+            width: 90%;
+            position: relative;
+            text-align: center;
+        }
+        .close-button {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            font-size: 2rem;
+            color: #aaa;
+            cursor: pointer;
+        }
+        .close-button:hover {
+            color: #333;
+        }
+        .password-input-container {
+            position: relative;
+            width: 100%;
+        }
+        .toggle-password-visibility {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+        }
+        .toggle-password-visibility:hover {
+            color: #333;
+        }
+    </style>
+</head>
+<body class="overflow-x-hidden">
+
+    <header class="bg-white shadow-md p-4 sticky top-0 z-50">
+        <nav class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <button id="cart-button" class="relative text-gray-700 hover:text-amber-600 transition duration-300">
+                    <i class="fas fa-shopping-cart text-2xl"></i>
+                    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                </button>
+                <a href="#home" class="text-3xl font-bold text-amber-800 nav-link">Den Skumle Bager</a>
+            </div>
+
+            <ul class="hidden md:flex space-x-6 text-lg font-medium items-center">
+                <li><a href="#home" class="text-gray-700 hover:text-amber-600 transition duration-300 nav-link">Hjem</a></li>
+                <li><a href="#about" class="text-gray-700 hover:text-amber-600 transition duration-300 nav-link">Om Os</a></li>
+                <li><a href="#contact" class="text-gray-700 hover:text-amber-600 transition duration-300 nav-link">Kontakt</a></li>
+                <li><a href="#support" class="text-gray-700 hover:text-amber-600 transition duration-300 nav-link">Support</a></li>
+                <li id="nav-profile-link">
+                    <a href="#my-profile" class="flex items-center space-x-2 text-gray-700 hover:text-amber-600 transition duration-300 nav-link">
+                        <img id="header-profile-pic" class="w-8 h-8 rounded-full border-2 border-amber-500" src="https://via.placeholder.com/50/FFD700/FFFFFF?text=P" alt="Profilbillede">
+                        <span id="nav-welcome-message" class="text-amber-800 font-semibold"></span>
+                    </a>
+                </li>
+                <li id="login-nav-item" class="hidden">
+                    <button id="login-button-nav" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-full transition duration-300">Log ind</button>
+                </li>
+                <li id="register-nav-item" class="hidden">
+                    <button id="register-button-nav" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition duration-300">Registrer</button>
+                </li>
+                <li id="logout-nav-item" class="hidden">
+                    <button id="logout-button-nav" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-300">Log ud</button>
+                </li>
+            </ul>
+            <div class="flex items-center md:hidden">
+                <button class="text-gray-700 text-2xl" id="menu-button">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden mt-4 bg-white rounded-lg shadow-lg">
+            <ul class="flex flex-col p-4 space-y-2 text-lg font-medium">
+                <li><a href="#home" class="block py-2 px-3 text-gray-700 hover:bg-amber-100 rounded-md transition duration-300 nav-link">Hjem</a></li>
+                <li><a href="#about" class="block py-2 px-3 text-gray-700 hover:bg-amber-100 rounded-md transition duration-300 nav-link">Om Os</a></li>
+                <li><a href="#contact" class="block py-2 px-3 text-gray-700 hover:bg-amber-100 rounded-md transition duration-300 nav-link">Kontakt</a></li>
+                <li><a href="#support" class="block py-2 px-3 text-gray-700 hover:bg-amber-100 rounded-md transition duration-300 nav-link">Support</a></li>
+                <li id="mobile-nav-profile-link">
+                    <a href="#my-profile" class="flex items-center space-x-2 py-2 px-3 text-gray-700 hover:bg-amber-100 rounded-md transition duration-300 nav-link">
+                        <img id="mobile-header-profile-pic" class="w-8 h-8 rounded-full border-2 border-amber-500" src="https://via.placeholder.com/50/FFD700/FFFFFF?text=P" alt="Profilbillede">
+                        <span id="mobile-nav-welcome-message" class="text-amber-800 font-semibold"></span>
+                    </a>
+                </li>
+                <li id="mobile-login-nav-item" class="hidden">
+                    <button id="mobile-login-button-nav" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-full transition duration-300 w-full">Log ind</button>
+                </li>
+                <li id="mobile-register-nav-item" class="hidden">
+                    <button id="mobile-register-button-nav" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full transition duration-300 w-full">Registrer</button>
+                </li>
+                <li id="mobile-logout-nav-item" class="hidden">
+                    <button id="mobile-logout-button-nav" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full transition duration-300 w-full">Log ud</button>
+                </li>
+            </ul>
+        </div>
+    </header>
+
+    <div id="alert-message" class="alert-message"></div>
+
+    <main>
+        <section id="home" class="flex flex-col items-center content-section active-section">
+            <div class="hero-section flex items-center justify-center text-white text-center rounded-b-xl shadow-lg mx-auto max-w-7xl mt-4 w-full">
+                <div class="bg-black bg-opacity-40 p-8 rounded-xl max-w-2xl">
+                    <h1 class="text-5xl md:text-6xl font-extrabold mb-4 drop-shadow-md">Velkommen til Vores Skumle Bager</h1>
+                    <p class="text-xl md:text-2xl mb-6 drop-shadow-md">Vi skumler, du bumler!</p>
+                    <div class="mt-8">
+                        <a href="#home-products" id="scroll-to-products" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 transform hover:scale-105 inline-block">Se Vores Produkter</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="home-products" class="container mx-auto my-16 p-8 bg-white rounded-xl shadow-lg w-full">
+                <h2 class="text-4xl font-bold text-center text-amber-800 mb-12">Vores Populære Produkter</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md flex flex-col items-center text-center transform hover:scale-105 transition duration-300">
+                        <img src="c:\Users\Bruger\Pictures\cheesecake.jpg" alt="Lækker Cheesecake" class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="text-2xl font-semibold text-amber-700 mb-2">Cheesecake</h3>
+                        <p class="text-gray-600 mb-4">Perfekt til fødselsdage og fester. Vælg din yndlingsfrosting!</p>
+                        <span class="text-3xl font-bold text-amber-800 mb-4">150 DKK</span>
+                        <div class="flex items-center justify-center space-x-2 mt-4">
+                            <input type="number" id="quantity-cheesecake" value="1" min="1" class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button class="add-to-cart-btn bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-full transition duration-300" data-product-name="Cheesecake" data-product-price="150">Tilføj til kurv</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md flex flex-col items-center text-center transform hover:scale-105 transition duration-300">
+                        <img src="c:\Users\Bruger\Pictures\rugbørd.jpg" alt="Friskbagt Rugbrød" class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="text-2xl font-semibold text-amber-700 mb-2">Friskbagt Rugbrød</h3>
+                        <p class="text-gray-600 mb-4">Hjemmebagt rugbrød med masser af kerner og smag.</p>
+                        <span class="text-3xl font-bold text-amber-800 mb-4">45 DKK</span>
+                        <div class="flex items-center justify-center space-x-2 mt-4">
+                            <input type="number" id="quantity-friskbagt-rugbrod" value="1" min="1" class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button class="add-to-cart-btn bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-full transition duration-300" data-product-name="Friskbagt Rugbrød" data-product-price="45">Tilføj til kurv</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md flex flex-col items-center text-center transform hover:scale-105 transition duration-300">
+                        <img src="c:\Users\Bruger\Pictures\Smørfyldt Croissantjpg.jpg" alt="Smørfyldt Croissant" class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="text-2xl font-semibold text-amber-700 mb-2">Smørfyldt Croissant</h3>
+                        <p class="text-gray-600 mb-4">Den perfekte start på dagen – sprød og luftig.</p>
+                        <span class="text-3xl font-bold text-amber-800 mb-4">25 DKK</span>
+                        <div class="flex items-center justify-center space-x-2 mt-4">
+                            <input type="number" id="quantity-smorfyldt-croissant" value="1" min="1" class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button class="add-to-cart-btn bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-full transition duration-300" data-product-name="Smørfyldt Croissant" data-product-price="25">Tilføj til kurv</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md flex flex-col items-center text-center transform hover:scale-105 transition duration-300">
+                        <img src="c:\Users\Bruger\Pictures\chokoladekage.jpg" alt="Rig Chokolade Kage" class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="text-2xl font-semibold text-amber-700 mb-2">Rig Chokoladekage</h3>
+                        <p class="text-gray-600 mb-4">En intens chokoladeoplevelse for den søde tand.</p>
+                        <span class="text-3xl font-bold text-amber-800 mb-4">100 DKK</span>
+                        <div class="flex items-center justify-center space-x-2 mt-4">
+                            <input type="number" id="quantity-rig-chokoladekage" value="1" min="1" class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button class="add-to-cart-btn bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-full transition duration-300" data-product-name="Rig Chokoladekage" data-product-price="100">Tilføj til kurv</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md flex flex-col items-center text-center transform hover:scale-105 transition duration-300">
+                        <img src="c:\Users\Bruger\Pictures\boller.jpg" alt="Bløde Fødselsdagsboller" class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="text-2xl font-semibold text-amber-700 mb-2">Bløde Fødselsdagsboller</h3>
+                        <p class="text-gray-600 mb-4">Perfekt til børnefødselsdage eller en hyggelig eftermiddag.</p>
+                        <span class="text-3xl font-bold text-amber-800 mb-4">12 DKK/stk</span>
+                        <div class="flex items-center justify-center space-x-2 mt-4">
+                            <input type="number" id="quantity-blode-fodselsdagsboller" value="1" min="1" class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button class="add-to-cart-btn bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-full transition duration-300" data-product-name="Bløde Fødselsdagsboller" data-product-price="12">Tilføj til kurv</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-xl shadow-md flex flex-col items-center text-center transform hover:scale-105 transition duration-300">
+                        <img src="c:\Users\Bruger\Pictures\snegl.jpg" alt="Kanelsnegle" class="w-full h-48 object-cover rounded-lg mb-4">
+                        <h3 class="text-2xl font-semibold text-amber-700 mb-2">Kanelsnegle</h3>
+                        <p class="text-gray-600 mb-4">Klassisk dansk kage, perfekt til kaffen.</p>
+                        <span class="text-3xl font-bold text-amber-800 mb-4">25 DKK</span>
+                        <div class="flex items-center justify-center space-x-2 mt-4">
+                            <input type="number" id="quantity-kanelsnegle" value="1" min="1" class="w-20 p-2 border border-gray-300 rounded-md text-center">
+                            <button class="add-to-cart-btn bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-6 rounded-full transition duration-300" data-product-name="Kanelsnegle" data-product-price="25">Tilføj til kurv</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="container mx-auto my-16 p-8 bg-amber-100 rounded-xl shadow-lg text-center content-section">
+            <h2 class="text-4xl font-bold text-amber-800 mb-8">Om Den Skumle Bager</h2>
+            <div class="flex flex-col md:flex-row items-start justify-center md:space-x-8">
+                <div class="md:w-1/2 flex justify-center items-center mt-8 md:mt-0">
+                    <video controls loop autoplay muted class="rounded-xl shadow-md square-video">
+                        <source src="c:\Users\Bruger\Downloads\bager.mp4" type="video/mp4">
+                        Din browser understøtter ikke video-tagget.
+                    </video>
+                </div>
+                <div class="md:w-1/2 text-left">
+                    <p class="text-lg text-gray-700 mt-4 mb-4">
+                        Hos Den Skumle Bager skaber vi magi med mel, vand og surdej! Siden 2005 har vi været dedikeret til at bage brød og kager af højeste kvalitet, baseret på stolte håndværkstraditioner og de bedste råvarer. Vi tror på, at godt brød er mere end bare mad - det er en oplevelse.
+                    </p>
+                    <p class="text-lg text-gray-700 mb-4">
+                        Vores dygtige bagere arbejder utrætteligt hver nat for at sikre, at du får friskbagt brød og sprøde kager hver morgen. Vi bruger kun nøje udvalgte ingredienser, og vores surdeje passes og plejes med stor omhu. Hos os finder du alt fra klassisk rugbrød til luftige croissanter og overdådige kager, der er perfekte til enhver lejlighed.
+                    </p>
+                    <p class="text-lg text-gray-700">
+                        Kom ind og mærk duften, der fylder vores bageri – vi glæder os til at byde dig velkommen til en verden af smag og godt håndværk!
+                    </p>
+                    <div class="mt-6">
+                        <p class="text-sm text-gray-500 mt-2">Et smugkig ind i vores magiske bageri!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="my-profile" class="container mx-auto my-16 p-8 bg-white rounded-xl shadow-lg content-section">
+            <h2 class="text-4xl font-bold text-center text-amber-800 mb-8">Min Profil</h2>
+            <div class="max-w-xl mx-auto space-y-8">
+                <div class="flex flex-col items-center space-y-4">
+                    <img id="profile-pic-display" class="w-32 h-32 rounded-full object-cover border-4 border-amber-500 shadow-md" src="https://via.placeholder.com/150/FFD700/FFFFFF?text=P" alt="Profilbillede">
+                    <label for="profile-pic-upload" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2 px-4 rounded-full cursor-pointer transition duration-300">
+                        Skift Profilbillede (Simuleret)
+                    </label>
+                    <input type="file" id="profile-pic-upload" accept="image/*" class="hidden">
+                    <p class="text-sm text-gray-500">Billedet gemmes kun i din nuværende browsersession.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-700 mb-4">Brugerinformation</h3>
+                    <div id="user-info-display" class="space-y-3">
+                        <p class="text-lg text-gray-700"><span class="font-medium">Brugernavn:</span> <span id="profile-username-display">StandardBruger</span></p>
+                        <p class="text-lg text-gray-700"><span class="font-medium">Email:</span> <span id="profile-email-display">standard@bruger.dk</span></p>
+                        <button id="edit-profile-button" class="bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-lg transition duration-300">Rediger profil</button>
+                    </div>
+
+                    <div id="user-info-edit" class="hidden space-y-3">
+                        <div>
+                            <label for="edit-username" class="block text-gray-700 text-lg font-medium mb-1">Brugernavn:</label>
+                            <input type="text" id="edit-username" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label for="edit-email" class="block text-gray-700 text-lg font-medium mb-1">Email:</label>
+                            <input type="email" id="edit-email" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <button id="save-profile-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-full transition duration-300">Gem ændringer</button>
+                        <button id="cancel-edit-button" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-full transition duration-300 ml-2">Annuller</button>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2">Dine profilinformationer gemmes kun i din nuværende browsersession for demonstration.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-700 mb-4">Gemte Betalingsmetoder</h3>
+                    <ul id="saved-payment-methods" class="space-y-3 text-lg text-gray-700 list-inside mb-4">
+                        <li id="no-payment-methods-message" class="text-center text-gray-500">Ingen gemte betalingsmetoder.</li>
+                    </ul>
+                    <button id="add-payment-method-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full transition duration-300">Tilføj Betalingsmetode (Simuleret)</button>
+                    <p class="text-sm text-gray-500 mt-2">Dette er en simuleret oversigt over dine gemte betalingsmetoder.</p>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-700 mb-4">Tidligere Køb</h3>
+                    <ul id="purchase-history-list" class="space-y-2 text-lg text-gray-700">
+                        <li id="no-purchase-history-message">Ingen tidligere køb.</li>
+                    </ul>
+                    <button id="clear-purchase-history-button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full mt-4 transition duration-300">Slet Købshistorik</button>
+                    <p class="text-sm text-gray-500 mt-2">Dette er en simuleret oversigt over dine seneste køb.</p>
+                </div>
+            </div>
+        </section>
+
+
+        <section id="contact" class="container mx-auto my-16 p-8 bg-white rounded-xl shadow-lg content-section">
+            <h2 class="text-4xl font-bold text-center text-amber-800 mb-12">Kontakt Os</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-700 mb-4">Find os her:</h3>
+                    <p class="text-lg text-gray-700 mb-2"><i class="fas fa-map-marker-alt text-amber-600 mr-2"></i>Skumlebagergade 13, 4000 Skumleby</p>
+                    <p class="text-lg text-gray-700 mb-2"><i class="fas fa-phone text-amber-600 mr-2"></i>+45 12 34 56 78</p>
+                    <p class="text-lg text-gray-700 mb-4"><i class="fas fa-envelope text-amber-600 mr-2"></i>info@denskumlebager.dk</p>
+
+                    <h3 class="text-2xl font-semibold text-amber-700 mb-4">Åbningstider:</h3>
+                    <ul class="text-lg text-gray-700">
+                        <li>Mandag - Fredag: 06:00 - 17:00</li>
+                        <li>Lørdag: 07:00 - 14:00</li>
+                        <li>Søndag: Lukket</li>
+                    </ul>
+
+                    <div class="mt-8">
+                        <iframe
+                            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2249.274391642839!2d12.502847716075908!3d55.77610098058784!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x46524fe250000001%3A0x60b0f49f3e9c3b88!2sDen%20Skumle%20Bager!5e0!3m2!1sen!2sdk!4v1678284890123!5m2!1sen!2sdk"
+                            width="100%" height="300" style="border:0;"
+                            allowfullscreen="" loading="lazy" class="rounded-xl shadow-md">
+                        </iframe>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-700 mb-4">Send os en besked:</h3>
+                    <form class="space-y-6">
+                        <div>
+                            <label for="name" class="block text-gray-700 text-lg font-medium mb-2">Navn</label>
+                            <input type="text" id="name" name="name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Dit fulde navn">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-gray-700 text-lg font-medium mb-2">Email</label>
+                            <input type="email" id="email" name="email" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="din@email.dk">
+                        </div>
+                        <div>
+                            <label for="subject" class="block text-gray-700 text-lg font-medium mb-2">Emne</label>
+                            <input type="text" id="subject" name="subject" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Emne for din henvendelse">
+                        </div>
+                        <div>
+                            <label for="message" class="block text-gray-700 text-lg font-medium mb-2">Besked</label>
+                            <textarea id="message" name="message" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Din besked..."></textarea>
+                        </div>
+                        <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 transform hover:scale-105">Send Besked</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <section id="support" class="container mx-auto my-16 p-8 bg-amber-100 rounded-xl shadow-lg content-section">
+            <h2 class="text-4xl font-bold text-center text-amber-800 mb-12">Ofte Stillede Spørgsmål (FAQ)</h2>
+            <div class="space-y-4">
+                <details class="bg-white p-6 rounded-xl shadow-md cursor-pointer group">
+                    <summary class="flex justify-between items-center text-xl font-semibold text-amber-700">
+                        Hvad er jeres åbningstider?
+                        <i class="fas fa-chevron-down text-gray-500 group-open:rotate-180 transition-transform duration-300"></i>
+                    </summary>
+                    <p class="mt-4 text-gray-700 text-lg">
+                        Vi har åbent mandag til fredag fra 06:00 til 17:00, og lørdag fra 07:00 til 14:00. Søndag holder vi lukket.
+                    </p>
+                </details>
+
+                <details class="bg-white p-6 rounded-xl shadow-md cursor-pointer group">
+                    <summary class="flex justify-between items-center text-xl font-semibold text-amber-700">
+                        Tilbyder I glutenfri produkter?
+                        <i class="fas fa-chevron-down text-gray-500 group-open:rotate-180 transition-transform duration-300"></i>
+                    </summary>
+                    <p class="mt-4 text-gray-700 text-lg">
+                        Ja, vi har et udvalg af glutenfri brød og kager. Spørg gerne personalet for mere information, da der kan være spor af gluten i vores faciliteter.
+                    </p>
+                </details>
+
+                <details class="bg-white p-6 rounded-xl shadow-md cursor-pointer group">
+                    <summary class="flex justify-between items-center text-xl font-semibold text-amber-700">
+                        Kan jeg bestille kager til specielle lejligheder?
+                        <i class="fas fa-chevron-down text-gray-500 group-open:rotate-180 transition-transform duration-300"></i>
+                    </summary>
+                    <p class="mt-4 text-gray-700 text-lg">
+                        Absolut! Vi laver gerne specialdesignede kager til bryllupper, fødselsdage, jubilæer og andre begivenheder. Kontakt os venligst i god tid for at drøfte dine ønsker.
+                    </p>
+                </details>
+
+                <details class="bg-white p-6 rounded-xl shadow-md cursor-pointer group">
+                    <summary class="flex justify-between items-center text-xl font-semibold text-amber-700">
+                        Hvilke betalingsmetoder accepterer I?
+                        <i class="fas fa-chevron-down text-gray-500 group-open:rotate-180 transition-transform duration-300"></i>
+                    </summary>
+                    <p class="mt-4 text-gray-700 text-lg">
+                        I butikken accepterer vi kontanter, dankort og de fleste større kreditkort. Online arbejder vi på at integrere betalingsløsninger som MobilePay og gængse kreditkort via en sikker betalingsgateway.
+                    </p>
+                </details>
+            </div>
+        </section>
+
+        <section id="payment-info" class="container mx-auto my-16 p-8 bg-white rounded-xl shadow-lg text-center content-section">
+            <h2 class="text-4xl font-bold text-amber-800 mb-8">Betalingssystem (Under Udvikling)</h2>
+            <p class="text-lg text-gray-700 mb-4">
+                Vi er i gang med at implementere et sikkert og brugervenligt online betalingssystem, så du snart kan bestille og betale dine favoritprodukter direkte her på siden.
+            </p>
+            <p class="text-lg text-gray-700">
+                I mellemtiden kan du kontakte os direkte for at afgive større bestillinger eller specialønsker.
+            </p>
+            <button id="checkout-button" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full mt-6 transition duration-300 transform hover:scale-105">Gå til Betaling</button>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white py-8 mt-16 rounded-t-xl shadow-lg">
+        <div class="container mx-auto text-center">
+            <p class="text-lg mb-4">© 2025 Den Skumle Bager. Alle rettigheder forbeholdes. Vi skumler, du bumler!</p>
+            <div class="flex justify-center space-x-6 text-2xl">
+                <a href="#" class="hover:text-amber-500 transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="hover:text-amber-500 transition duration-300"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="hover:text-amber-500 transition duration-300"><i class="fab fa-twitter"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <div id="cart-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full relative">
+            <button id="close-cart-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">×</button>
+            <h2 class="text-3xl font-bold text-amber-800 mb-6">Din Indkøbskurv</h2>
+            <div id="cart-items" class="space-y-4 mb-6 max-h-60 overflow-y-auto">
+                <p id="empty-cart-message" class="text-gray-600 text-lg">Din kurv er tom.</p>
+            </div>
+            <div class="flex justify-between items-center text-2xl font-bold text-amber-800 border-t pt-4">
+                <span>Total:</span>
+                <span id="cart-total">0 DKK</span>
+            </div>
+            <button id="proceed-to-checkout-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full mt-8 w-full transition duration-300 transform hover:scale-105">Gå til Betaling</button>
+        </div>
+    </div>
+
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white p-8 rounded-xl shadow-2xl max-w-lg w-full relative">
+            <button id="close-payment-modal" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800 text-3xl">×</button>
+            <h2 class="text-3xl font-bold text-amber-800 mb-6">Udfyld Betalingsoplysninger</h2>
+            <form class="space-y-6" id="payment-form">
+                <div>
+                    <label for="card-number" class="block text-gray-700 text-lg font-medium mb-2">Kortnummer</label>
+                    <input type="text" id="card-number" inputmode="numeric" pattern="[0-9\s]*" maxlength="19" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="XXXX XXXX XXXX XXXX" required>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="expiry-date" class="block text-gray-700 text-lg font-medium mb-2">Udløbsdato (MM/ÅÅ)</label>
+                        <input type="text" id="expiry-date" inputmode="numeric" pattern="[0-9/]*" maxlength="5" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="MM/ÅÅ" required>
+                    </div>
+                    <div>
+                        <label for="cvv" class="block text-gray-700 text-lg font-medium mb-2">CVV</label>
+                        <input type="text" id="cvv" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="XXX" required>
+                    </div>
+                </div>
+                <div>
+                    <label for="card-name" class="block text-gray-700 text-lg font-medium mb-2">Navn på kort</label>
+                    <input type="text" id="card-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Navn som på kortet" required>
+                </div>
+                <div class="text-center text-gray-700 text-lg font-medium mt-6 mb-4"> — ELLER — </div>
+                <button type="button" id="mobilepay-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300 transform hover:scale-105">Betal med MobilePay (Simuleret)</button>
+                <p class="text-center text-sm text-red-600 mt-4">Bemærk: Dette er en simuleret betalingsformular. Faktisk betalingsbehandling kræver integration med en betalingsgateway og backend-udvikling.</p>
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300 transform hover:scale-105">Gennemfør Betaling (Simuleret)</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="mobilepay-input-modal" class="mobilepay-modal hidden">
+        <div class="mobilepay-modal-content">
+            <h3 class="text-2xl font-bold text-amber-800 mb-4">Simuler MobilePay Betaling</h3>
+            <p class="text-gray-700 mb-4">Indtast et vilkårligt 8-cifret telefonnummer for at simulere betaling:</p>
+            <input type="text" id="mobilepay-phone-number" inputmode="tel" pattern="[0-9]*" maxlength="8" class="w-full p-3 border border-gray-300 rounded-md text-center focus:outline-none focus:ring-2 focus:ring-amber-500 mb-4" placeholder="F.eks. 12345678" required>
+            <button id="mobilepay-confirm-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 mr-2">Bekræft MobilePay</button>
+            <button id="mobilepay-cancel-button" class="bg-gray-400 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-full transition duration-300">Annuller</button>
+            <p class="text-sm text-red-600 mt-4">Dette er kun en simulering og foretager ikke en reel betaling.</p>
+        </div>
+    </div>
+
+    <div id="add-payment-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="close-add-payment-modal">×</span>
+            <h2 class="text-3xl font-bold text-amber-800 mb-6">Tilføj Betalingsmetode</h2>
+            <form id="add-payment-form" class="space-y-4">
+                <div>
+                    <label for="payment-method-type" class="block text-gray-700 text-lg font-medium mb-2">Type</label>
+                    <select id="payment-method-type" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <option value="card">Kreditkort</option>
+                        <option value="mobilepay">MobilePay</option>
+                    </select>
+                </div>
+
+                <div id="card-fields">
+                    <div>
+                        <label for="new-card-number" class="block text-gray-700 text-lg font-medium mb-2">Kortnummer</label>
+                        <input type="text" id="new-card-number" inputmode="numeric" pattern="[0-9\s]*" maxlength="19" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="XXXX XXXX XXXX XXXX">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label for="new-expiry-date" class="block text-gray-700 text-lg font-medium mb-2">Udløbsdato (MM/ÅÅ)</label>
+                            <input type="text" id="new-expiry-date" inputmode="numeric" pattern="[0-9/]*" maxlength="5" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="MM/ÅÅ">
+                        </div>
+                        <div>
+                            <label for="new-cvv" class="block text-gray-700 text-lg font-medium mb-2">CVV</label>
+                            <input type="text" id="new-cvv" inputmode="numeric" pattern="[0-9]*" maxlength="4" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="XXX">
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label for="new-card-name" class="block text-gray-700 text-lg font-medium mb-2">Navn på kort</label>
+                        <input type="text" id="new-card-name" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Navn som på kortet">
+                    </div>
+                </div>
+
+                <div id="mobilepay-fields" class="hidden">
+                    <div>
+                        <label for="new-mobilepay-phone" class="block text-gray-700 text-lg font-medium mb-2">Telefonnummer (MobilePay)</label>
+                        <input type="text" id="new-mobilepay-phone" inputmode="tel" pattern="[0-9]*" maxlength="8" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="F.eks. 12345678">
+                    </div>
+                </div>
+
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300">Gem Betalingsmetode (Simuleret)</button>
+            </form>
+            <p class="text-center text-sm text-red-600 mt-4">Dette er kun en simulering og gemmer ikke reelle kortdata.</p>
+        </div>
+    </div>
+
+
+    <div id="login-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="close-login-modal">×</span>
+            <h2 class="text-3xl font-bold text-amber-800 mb-6">Log ind</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label for="login-username" class="sr-only">Brugernavn</label>
+                    <input type="text" id="login-username" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Brugernavn" required>
+                </div>
+                <div class="password-input-container">
+                    <label for="login-password" class="sr-only">Adgangskode</label>
+                    <input type="password" id="login-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Adgangskode" required>
+                    <span class="toggle-password-visibility" data-target="login-password">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300">Log ind</button>
+            </form>
+            <p class="mt-4 text-gray-600">Har du ikke en konto? <button id="switch-to-register" class="text-amber-600 hover:underline font-semibold">Registrer dig her</button></p>
+            <p class="mt-2 text-gray-600"><button id="forgot-password-button" class="text-amber-600 hover:underline font-semibold">Glemt adgangskode?</button></p>
+        </div>
+    </div>
+
+    <div id="register-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="close-register-modal">×</span>
+            <h2 class="text-3xl font-bold text-amber-800 mb-6">Registrer dig</h2>
+            <form id="register-form" class="space-y-4">
+                <div>
+                    <label for="register-username" class="sr-only">Brugernavn</label>
+                    <input type="text" id="register-username" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Vælg brugernavn" required>
+                </div>
+                <div>
+                    <label for="register-email" class="sr-only">Email</label>
+                    <input type="email" id="register-email" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Din email" required>
+                </div>
+                <div class="password-input-container">
+                    <label for="register-password" class="sr-only">Adgangskode</label>
+                    <input type="password" id="register-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Vælg adgangskode" required>
+                    <span class="toggle-password-visibility" data-target="register-password">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <div class="password-input-container">
+                    <label for="register-confirm-password" class="sr-only">Bekræft adgangskode</label>
+                    <input type="password" id="register-confirm-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Bekræft adgangskode" required>
+                    <span class="toggle-password-visibility" data-target="register-confirm-password">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300">Opret konto</button>
+            </form>
+            <p class="mt-4 text-gray-600">Har du allerede en konto? <button id="switch-to-login" class="text-amber-600 hover:underline font-semibold">Log ind her</button></p>
+        </div>
+    </div>
+
+    <div id="forgot-password-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="close-forgot-password-modal">×</span>
+            <h2 class="text-3xl font-bold text-amber-800 mb-6">Glemt Adgangskode</h2>
+            <form id="forgot-password-form" class="space-y-4">
+                <div>
+                    <label for="forgot-email" class="block text-gray-700 text-lg font-medium mb-2">Indtast din email</label>
+                    <input type="email" id="forgot-email" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="din@email.dk" required>
+                </div>
+                <button type="submit" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300">Send nulstillingslink (Simuleret)</button>
+            </form>
+            <div id="reset-password-section" class="hidden space-y-4 mt-6">
+                <h3 class="text-2xl font-bold text-amber-800 mb-4">Nulstil Adgangskode</h3>
+                <div>
+                    <label for="reset-username" class="block text-gray-700 text-lg font-medium mb-2">Brugernavn</label>
+                    <input type="text" id="reset-username" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Dit brugernavn" required>
+                </div>
+                <div class="password-input-container">
+                    <label for="reset-password" class="block text-gray-700 text-lg font-medium mb-2">Ny adgangskode</label>
+                    <input type="password" id="reset-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ny adgangskode" required>
+                    <span class="toggle-password-visibility" data-target="reset-password">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <div class="password-input-container">
+                    <label for="reset-confirm-password" class="block text-gray-700 text-lg font-medium mb-2">Bekræft ny adgangskode</label>
+                    <input type="password" id="reset-confirm-password" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Bekræft ny adgangskode" required>
+                    <span class="toggle-password-visibility" data-target="reset-confirm-password">
+                        <i class="fas fa-eye"></i>
+                    </span>
+                </div>
+                <button id="confirm-reset-password" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full w-full transition duration-300">Nulstil Adgangskode</button>
+            </div>
+            <p class="text-center text-sm text-red-600 mt-4">Denne funktion er simuleret og sender ikke faktiske emails.</p>
+        </div>
+    </div>
+
+
+    <script>
+        const cartButton = document.getElementById('cart-button');
+        const cartModal = document.getElementById('cart-modal');
+        const closeCartModal = document.getElementById('close-cart-modal');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const cartTotalSpan = document.getElementById('cart-total');
+        const checkoutButton = document.getElementById('checkout-button');
+        const proceedToCheckoutButton = document.getElementById('proceed-to-checkout-button');
+        const paymentModal = document.getElementById('payment-modal');
+        const closePaymentModal = document.getElementById('close-payment-modal');
+        const paymentForm = document.getElementById('payment-form');
+        const mobilePayButton = document.getElementById('mobilepay-button');
+        const mobilePayInputModal = document.getElementById('mobilepay-input-modal');
+        const mobilePayConfirmButton = document.getElementById('mobilepay-confirm-button');
+        const mobilePayCancelButton = document.getElementById('mobilepay-cancel-button');
+        const mobilePayPhoneNumberInput = document.getElementById('mobilepay-phone-number');
+        const alertMessage = document.getElementById('alert-message');
+        const scrollToProductsButton = document.getElementById('scroll-to-products');
+
+        // Login/Register elements
+        const loginModal = document.getElementById('login-modal');
+        const closeLoginModal = document.getElementById('close-login-modal');
+        const loginForm = document.getElementById('login-form');
+        const loginUsernameInput = document.getElementById('login-username');
+        const loginPasswordInput = document.getElementById('login-password');
+        const registerModal = document.getElementById('register-modal');
+        const closeRegisterModal = document.getElementById('close-register-modal');
+        const registerForm = document.getElementById('register-form');
+        const registerUsernameInput = document.getElementById('register-username');
+        const registerEmailInput = document.getElementById('register-email');
+        const registerPasswordInput = document.getElementById('register-password');
+        const registerConfirmPasswordInput = document.getElementById('register-confirm-password');
+        const switchToRegisterButton = document.getElementById('switch-to-register');
+        const switchToLoginButton = document.getElementById('switch-to-login');
+        const loginButtonNav = document.getElementById('login-button-nav');
+        const registerButtonNav = document.getElementById('register-button-nav');
+        const logoutButtonNav = document.getElementById('logout-button-nav');
+        const navProfileLink = document.getElementById('nav-profile-link');
+        const loginNavItem = document.getElementById('login-nav-item');
+        const registerNavItem = document.getElementById('register-nav-item');
+        const logoutNavItem = document.getElementById('logout-nav-item');
+        const mobileLoginButtonNav = document.getElementById('mobile-login-button-nav');
+        const mobileRegisterButtonNav = document.getElementById('mobile-register-button-nav');
+        const mobileLogoutButtonNav = document.getElementById('mobile-logout-button-nav');
+        const mobileNavProfileLink = document.getElementById('mobile-nav-profile-link');
+        const mobileLoginNavItem = document.getElementById('mobile-login-nav-item');
+        const mobileRegisterNavItem = document.getElementById('mobile-register-nav-item');
+        const mobileLogoutNavItem = document.getElementById('mobile-logout-nav-item');
+
+        // Forgot Password elements
+        const forgotPasswordButton = document.getElementById('forgot-password-button');
+        const forgotPasswordModal = document.getElementById('forgot-password-modal');
+        const closeForgotPasswordModal = document.getElementById('close-forgot-password-modal');
+        const forgotPasswordForm = document.getElementById('forgot-password-form');
+        const forgotEmailInput = document.getElementById('forgot-email');
+        const resetPasswordSection = document.getElementById('reset-password-section');
+        const resetUsernameInput = document.getElementById('reset-username');
+        const resetPasswordInput = document.getElementById('reset-password');
+        const resetConfirmPasswordInput = document.getElementById('reset-confirm-password');
+        const confirmResetPasswordButton = document.getElementById('confirm-reset-password');
+
+        // Add Payment Method elements
+        const addPaymentMethodButton = document.getElementById('add-payment-method-button');
+        const addPaymentModal = document.getElementById('add-payment-modal');
+        const closeAddPaymentModal = document.getElementById('close-add-payment-modal');
+        const addPaymentForm = document.getElementById('add-payment-form');
+        const paymentMethodTypeSelect = document.getElementById('payment-method-type');
+        const cardFields = document.getElementById('card-fields');
+        const mobilepayFields = document.getElementById('mobilepay-fields');
+        const newCardNumberInput = document.getElementById('new-card-number');
+        const newExpiryDateInput = document.getElementById('new-expiry-date');
+        const newCvvInput = document.getElementById('new-cvv');
+        const newCardNameInput = document.getElementById('new-card-name');
+        const newMobilepayPhoneInput = document.getElementById('new-mobilepay-phone');
+
+        // Clear Purchase History button
+        const clearPurchaseHistoryButton = document.getElementById('clear-purchase-history-button');
+
+
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        let userProfile = JSON.parse(localStorage.getItem('userProfile')) || {
+            username: null, // No default user
+            email: null,
+            profilePic: 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P'
+        };
+        let isLoggedIn = userProfile.username !== null; // Determine login status from stored data
+
+        // Purchase history and savedPaymentMethods are now part of the user object in 'users'
+        let purchaseHistory = [];
+        let savedPaymentMethods = [];
+
+
+        function saveCart() {
+            localStorage.setItem('cart', JSON.stringify(cart));
+        }
+
+        function saveUserProfile() {
+            // This function only saves the current active userProfile (for display purposes and active session)
+            // The actual user data (including payment methods and purchase history) is saved within the `users` object
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            updateNavVisibility(); // Update nav bar instantly
+        }
+
+        function saveUserDataToLocalStorage() {
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            if (userProfile.username) {
+                users[userProfile.username] = {
+                    ...users[userProfile.username], // Keep existing password
+                    email: userProfile.email,
+                    profilePic: userProfile.profilePic,
+                    purchaseHistory: purchaseHistory,
+                    savedPaymentMethods: savedPaymentMethods
+                };
+            }
+            localStorage.setItem('users', JSON.stringify(users));
+        }
+
+        function loadUserDataFromLocalStorage() {
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            if (userProfile.username && users[userProfile.username]) {
+                const currentUserData = users[userProfile.username];
+                userProfile.email = currentUserData.email;
+                userProfile.profilePic = currentUserData.profilePic || 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P';
+                purchaseHistory = currentUserData.purchaseHistory || [];
+                savedPaymentMethods = currentUserData.savedPaymentMethods || [];
+            } else {
+                // If no user logged in, or user not found, reset to defaults
+                userProfile.email = null;
+                userProfile.profilePic = 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P';
+                purchaseHistory = []; // Guest has no stored history or payment methods
+                savedPaymentMethods = [];
+            }
+        }
+
+
+        function showAlert(message, type = 'success') {
+            alertMessage.textContent = message;
+            alertMessage.className = 'alert-message show'; // Reset classes
+            if (type === 'success') {
+                alertMessage.style.backgroundColor = '#4CAF50';
+            } else if (type === 'error') {
+                alertMessage.style.backgroundColor = '#f44336';
+            } else {
+                alertMessage.style.backgroundColor = '#2196F3'; // Default blue
+            }
+            setTimeout(() => {
+                alertMessage.classList.remove('show');
+            }, 3000);
+        }
+
+        function clearCart() {
+            cart = [];
+            saveCart();
+            updateCartDisplay();
+        }
+
+        function updateCartDisplay() {
+            cartItemsContainer.innerHTML = '';
+            let total = 0;
+
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+            } else {
+                emptyCartMessage.classList.add('hidden');
+                cart.forEach((item, index) => {
+                    const itemTotal = item.price * item.quantity;
+                    total += itemTotal;
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'flex justify-between items-center bg-gray-100 p-3 rounded-md shadow-sm';
+                    itemDiv.innerHTML = `
+                        <div class="flex-1">
+                            <p class="font-semibold text-gray-800">${item.name}</p>
+                            <p class="text-sm text-gray-600">${item.quantity} x ${item.price.toFixed(2)} DKK</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-amber-700">${itemTotal.toFixed(2)} DKK</span>
+                            <button class="remove-from-cart-btn bg-red-500 hover:bg-red-600 text-white p-1 rounded-full w-6 h-6 flex items-center justify-center text-sm" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+                    cartItemsContainer.appendChild(itemDiv);
+                });
+            }
+
+            cartTotalSpan.textContent = `${total.toFixed(2)} DKK`;
+            document.getElementById('cart-count').textContent = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+            // Add event listeners for remove buttons
+            document.querySelectorAll('.remove-from-cart-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const index = parseInt(event.target.closest('button').dataset.index);
+                    removeFromCart(index);
+                });
+            });
+            saveCart();
+        }
+
+        function addToCart(productName, price, quantity) {
+            let item = cart.find(item => item.name === productName);
+            if (item) {
+                item.quantity += quantity;
+            } else {
+                cart.push({ name: productName, price: price, quantity: quantity });
+            }
+            updateCartDisplay();
+            showAlert(`${quantity} stk. ${productName} tilføjet til kurv!`);
+        }
+
+        function removeFromCart(index) {
+            const removedItem = cart[index];
+            if (removedItem.quantity > 1) {
+                removedItem.quantity--;
+                showAlert(`Fjernet 1 stk. ${removedItem.name} fra kurv.`);
+            } else {
+                cart.splice(index, 1);
+                showAlert(`Fjernet ${removedItem.name} fra kurv.`);
+            }
+            updateCartDisplay();
+        }
+
+        function checkout() {
+            if (cart.length === 0) {
+                showAlert('Din kurv er tom. Tilføj varer før betaling.', 'error');
+                return;
+            }
+            
+            // Move cart items to purchase history
+            const newPurchase = {
+                id: `ORD-${Date.now()}`,
+                date: new Date().toLocaleDateString('da-DK'),
+                items: JSON.parse(JSON.stringify(cart)), // Deep copy cart items
+                total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)
+            };
+            purchaseHistory.unshift(newPurchase); // Add to the beginning
+            saveUserDataToLocalStorage(); // Save updated purchase history
+            
+
+            clearCart(); // Clear the cart
+            showAlert('Tak for dit køb! Ordre gennemført.', 'success');
+            updateProfileDisplay(); // Update purchase history in profile
+
+            // Close all modals after successful checkout
+            cartModal.classList.add('hidden');
+            paymentModal.classList.add('hidden');
+            mobilePayInputModal.classList.add('hidden');
+
+            // Redirect to home page
+            showSection('home');
+        }
+
+        // --- Event Listeners ---
+
+        // Navigation
+        document.querySelectorAll('nav a, #mobile-menu a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                if (href.startsWith('#')) {
+                    e.preventDefault();
+                    const sectionId = href.substring(1);
+                    showSection(sectionId);
+                    // Close mobile menu if open
+                    if (document.getElementById('mobile-menu').classList.contains('flex')) {
+                        document.getElementById('mobile-menu').classList.add('hidden');
+                        document.getElementById('mobile-menu').classList.remove('flex');
+                    }
+                }
+            });
+        });
+
+        function showSection(id) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active-section');
+                section.style.display = 'none'; // Ensure it's hidden
+            });
+            const activeSection = document.getElementById(id);
+            if (activeSection) {
+                activeSection.classList.add('active-section');
+                activeSection.style.display = 'block'; // Or 'flex' depending on its default display
+                window.location.hash = id; // Update URL hash for direct linking/refresh
+            }
+        }
+
+
+        // Toggle mobile menu
+        document.getElementById('menu-button').addEventListener('click', () => {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+            mobileMenu.classList.toggle('flex');
+        });
+
+        // Add to Cart buttons
+        document.querySelectorAll('.add-to-cart-btn').forEach(button => {
+            button.addEventListener('click', (event) => {
+                const productName = event.target.dataset.productName;
+                const price = parseFloat(event.target.dataset.productPrice);
+                // Ensure the quantity input ID matches the generated ID
+                const quantityInputId = `quantity-${productName.toLowerCase().replace(/æ/g, 'ae').replace(/ø/g, 'oe').replace(/å/g, 'aa').replace(/\s/g, '-')}`;
+                const quantityInput = document.getElementById(quantityInputId);
+                let quantity = 1; // Default to 1 if input not found or invalid
+                if (quantityInput) {
+                    quantity = parseInt(quantityInput.value);
+                    if (isNaN(quantity) || quantity < 1) {
+                        quantity = 1;
+                    }
+                }
+                
+                addToCart(productName, price, quantity);
+            });
+        });
+
+        // Smooth scroll for "Se Vores Produkter" button
+        scrollToProductsButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = scrollToProductsButton.getAttribute('href');
+            document.querySelector(targetId).scrollIntoView({
+                behavior: 'smooth'
+            });
+        });
+
+
+        // Cart Modal
+        cartButton.addEventListener('click', () => {
+            cartModal.classList.remove('hidden');
+            cartModal.classList.add('show');
+            updateCartDisplay();
+        });
+
+        closeCartModal.addEventListener('click', () => {
+            cartModal.classList.remove('show');
+            cartModal.classList.add('hidden');
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === cartModal) {
+                cartModal.classList.remove('show');
+                cartModal.classList.add('hidden');
+            }
+            if (event.target === paymentModal) {
+                paymentModal.classList.remove('show');
+                paymentModal.classList.add('hidden');
+            }
+            if (event.target === mobilePayInputModal) {
+                mobilePayInputModal.classList.remove('show');
+                mobilePayInputModal.classList.add('hidden');
+            }
+            if (event.target === loginModal) {
+                loginModal.classList.remove('show');
+                loginModal.classList.add('hidden');
+            }
+            if (event.target === registerModal) {
+                registerModal.classList.remove('show');
+                registerModal.classList.add('hidden');
+            }
+            if (event.target === addPaymentModal) {
+                addPaymentModal.classList.remove('show');
+                addPaymentModal.classList.add('hidden');
+            }
+            if (event.target === forgotPasswordModal) {
+                forgotPasswordModal.classList.remove('show');
+                forgotPasswordModal.classList.add('hidden');
+            }
+        });
+
+        // Checkout Button in Cart Modal
+        proceedToCheckoutButton.addEventListener('click', () => {
+            cartModal.classList.add('hidden');
+            paymentModal.classList.remove('hidden');
+            paymentModal.classList.add('show');
+        });
+
+        // Checkout Button on Payment Info Section (for direct access)
+        checkoutButton.addEventListener('click', () => {
+            paymentModal.classList.remove('hidden');
+            paymentModal.classList.add('show');
+        });
+
+        // Close Payment Modal
+        closePaymentModal.addEventListener('click', () => {
+            paymentModal.classList.remove('show');
+            paymentModal.classList.add('hidden');
+        });
+
+        // Payment Form Submission
+        paymentForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+
+            // Basic card validation (more robust validation would be needed for a real system)
+            const cardNumber = document.getElementById('card-number').value.replace(/\s/g, ''); // Remove spaces
+            const expiryDate = document.getElementById('expiry-date').value;
+            const cvv = document.getElementById('cvv').value;
+            const cardName = document.getElementById('card-name').value;
+
+            // Simple validation; in a real app, this would be more thorough
+            if (cardNumber.length < 13 || cardNumber.length > 19 || isNaN(cardNumber)) {
+                showAlert('Kortnummer skal være mellem 13 og 19 cifre.', 'error');
+                return;
+            }
+            if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expiryDate)) {
+                 showAlert('Ugyldig udløbsdato (MM/ÅÅ).', 'error');
+                return;
+            }
+            if (cvv.length < 3 || cvv.length > 4 || isNaN(cvv)) {
+                showAlert('CVV skal være 3 eller 4 cifre.', 'error');
+                return;
+            }
+            if (cardName.trim() === '') {
+                showAlert('Navn på kort må ikke være tomt.', 'error');
+                return;
+            }
+
+            checkout(); // Process the order and show "Tak for dit køb"
+            paymentForm.reset(); // Clear form
+        });
+
+        // MobilePay Button
+        mobilePayButton.addEventListener('click', () => {
+            mobilePayInputModal.classList.add('show');
+            mobilePayInputModal.classList.remove('hidden');
+            paymentModal.classList.remove('show'); // Hide payment modal temporarily
+            paymentModal.classList.add('hidden');
+        });
+
+        mobilePayConfirmButton.addEventListener('click', () => {
+            const phoneNumber = mobilePayPhoneNumberInput.value;
+            if (phoneNumber && phoneNumber.length === 8 && /^\d{8}$/.test(phoneNumber)) { // Check for exactly 8 digits
+                showAlert('MobilePay betaling bekræftet (simuleret)!', 'success');
+                checkout(); // Process the order
+                mobilePayInputModal.classList.remove('show');
+                mobilePayInputModal.classList.add('hidden');
+                paymentModal.classList.add('hidden'); // Ensure payment modal is hidden
+                mobilePayPhoneNumberInput.value = ''; // Clear input
+            } else {
+                showAlert('Ugyldigt telefonnummer til MobilePay. Skal være et 8-cifret nummer.', 'error');
+            }
+        });
+
+        mobilePayCancelButton.addEventListener('click', () => {
+            mobilePayInputModal.classList.remove('show');
+            mobilePayInputModal.classList.add('hidden');
+            paymentModal.classList.add('show'); // Show payment modal again
+            paymentModal.classList.remove('hidden');
+        });
+
+        // --- Card input formatting ---
+        const cardNumberInput = document.getElementById('card-number');
+        const expiryDateInput = document.getElementById('expiry-date');
+        const cvvInput = document.getElementById('cvv');
+
+        if (cardNumberInput) { // Check if element exists
+            cardNumberInput.addEventListener('input', (e) => {
+                // Remove all non-digits first
+                let value = e.target.value.replace(/\D/g, '');
+                // Add space every 4 digits
+                value = value.replace(/(.{4})/g, '$1 ').trim();
+                e.target.value = value;
+            });
+        }
+        
+
+        if (expiryDateInput) { // Check if element exists
+            expiryDateInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+                if (value.length > 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                }
+                e.target.value = value;
+            });
+        }
+        
+
+        if (cvvInput) { // Check if element exists
+            cvvInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/\D/g, ''); // Only digits
+            });
+        }
+
+
+        // New card input formatting for "Add Payment Method" modal
+        if (newCardNumberInput) {
+            newCardNumberInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/(.{4})/g, '$1 ').trim();
+                e.target.value = value;
+            });
+        }
+
+        if (newExpiryDateInput) {
+            newExpiryDateInput.addEventListener('input', (e) => {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                }
+                e.target.value = value;
+            });
+        }
+
+        if (newCvvInput) {
+            newCvvInput.addEventListener('input', (e) => {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
+        }
+
+
+        // --- Login/Register Logic ---
+
+        loginButtonNav.addEventListener('click', () => {
+            loginModal.classList.add('show');
+            loginModal.classList.remove('hidden');
+        });
+
+        registerButtonNav.addEventListener('click', () => {
+            registerModal.classList.add('show');
+            registerModal.classList.remove('hidden');
+        });
+
+        closeLoginModal.addEventListener('click', () => {
+            loginModal.classList.remove('show');
+            loginModal.classList.add('hidden');
+        });
+
+        closeRegisterModal.addEventListener('click', () => {
+            registerModal.classList.remove('show');
+            registerModal.classList.add('hidden');
+        });
+
+        switchToRegisterButton.addEventListener('click', () => {
+            loginModal.classList.remove('show');
+            loginModal.classList.add('hidden');
+            registerModal.classList.add('show');
+            registerModal.classList.remove('hidden');
+        });
+
+        switchToLoginButton.addEventListener('click', () => {
+            registerModal.classList.remove('show');
+            registerModal.classList.add('hidden');
+            loginModal.classList.add('show');
+            loginModal.classList.remove('hidden');
+        });
+
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = loginUsernameInput.value;
+            const password = loginPasswordInput.value;
+
+            // Simple simulated login: checks if user exists in localStorage
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            const storedUser = users[username];
+
+            if (storedUser && storedUser.password === password) {
+                userProfile.username = username;
+                
+                // Load ALL user data (email, profilePic, purchaseHistory, savedPaymentMethods)
+                loadUserDataFromLocalStorage(); 
+                
+                isLoggedIn = true;
+                saveUserProfile(); // This saves current active userProfile (username, email, pic) for the session
+                showAlert(`Velkommen tilbage, ${username}!`, 'success');
+                loginModal.classList.remove('show');
+                loginModal.classList.add('hidden');
+                updateProfileDisplay(); // Re-render profile section with loaded data
+            } else {
+                showAlert('Forkert brugernavn eller adgangskode.', 'error');
+            }
+        });
+
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = registerUsernameInput.value;
+            const email = registerEmailInput.value;
+            const password = registerPasswordInput.value;
+            const confirmPassword = registerConfirmPasswordInput.value;
+
+            if (password !== confirmPassword) {
+                showAlert('Adgangskoder matcher ikke.', 'error');
+                return;
+            }
+            if (password.length < 6) { // Minimum password length
+                showAlert('Adgangskoden skal være mindst 6 tegn lang.', 'error');
+                return;
+            }
+
+
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            if (users[username]) {
+                showAlert('Brugernavn er allerede taget.', 'error');
+                return;
+            }
+
+            // Set default profile picture for new user
+            const defaultProfilePic = 'https://via.placeholder.com/50/FFD700/FFFFFF?text=' + username.charAt(0).toUpperCase();
+
+            // Store new user data in the 'users' object, including empty arrays for history/payments
+            users[username] = { 
+                email: email, 
+                password: password, 
+                profilePic: defaultProfilePic, 
+                purchaseHistory: [],
+                savedPaymentMethods: []
+            }; 
+            localStorage.setItem('users', JSON.stringify(users));
+
+            userProfile.username = username;
+            userProfile.email = email;
+            userProfile.profilePic = defaultProfilePic; // Set current user's profile pic
+            purchaseHistory = []; // New user has empty purchase history
+            savedPaymentMethods = []; // New user has no saved payment methods
+            isLoggedIn = true;
+            saveUserProfile(); // Save active user profile
+            showAlert(`Konto oprettet! Velkommen, ${username}!`, 'success');
+            registerModal.classList.remove('show');
+            registerModal.classList.add('hidden');
+            updateProfileDisplay();
+        });
+
+        logoutButtonNav.addEventListener('click', () => {
+            saveUserDataToLocalStorage(); // Save current user's data before logging out
+            
+            userProfile.username = null;
+            userProfile.email = null;
+            userProfile.profilePic = 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P'; // Reset to default
+            purchaseHistory = []; // Clear for guest session
+            savedPaymentMethods = []; // Clear for guest session
+            isLoggedIn = false;
+            saveUserProfile(); // Saves the reset userProfile
+            showAlert('Du er nu logget ud.', 'success');
+            updateProfileDisplay(); // Update profile section display
+            showSection('home'); // Go to home after logout
+        });
+
+        mobileLoginButtonNav.addEventListener('click', () => {
+            loginModal.classList.add('show');
+            loginModal.classList.remove('hidden');
+            document.getElementById('mobile-menu').classList.add('hidden'); // Close mobile menu
+            document.getElementById('mobile-menu').classList.remove('flex');
+        });
+
+        mobileRegisterButtonNav.addEventListener('click', () => {
+            registerModal.classList.add('show');
+            registerModal.classList.remove('hidden');
+            document.getElementById('mobile-menu').classList.add('hidden'); // Close mobile menu
+            document.getElementById('mobile-menu').classList.remove('flex');
+        });
+
+        mobileLogoutButtonNav.addEventListener('click', () => {
+            saveUserDataToLocalStorage(); // Save current user's data before logging out
+            userProfile.username = null;
+            userProfile.email = null;
+            userProfile.profilePic = 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P';
+            purchaseHistory = [];
+            savedPaymentMethods = [];
+            isLoggedIn = false;
+            saveUserProfile();
+            showAlert('Du er nu logget ud.', 'success');
+            updateProfileDisplay();
+            showSection('home');
+            document.getElementById('mobile-menu').classList.add('hidden'); // Close mobile menu
+            document.getElementById('mobile-menu').classList.remove('flex');
+        });
+
+
+        // Profile Section Logic (ensure elements exist before attaching listeners)
+        const profilePicUpload = document.getElementById('profile-pic-upload');
+        const profilePicDisplay = document.getElementById('profile-pic-display');
+        const headerProfilePic = document.getElementById('header-profile-pic');
+        const mobileHeaderProfilePic = document.getElementById('mobile-header-profile-pic');
+        const navWelcomeMessage = document.getElementById('nav-welcome-message');
+        const mobileNavWelcomeMessage = document.getElementById('mobile-nav-welcome-message');
+        const profileUsernameDisplay = document.getElementById('profile-username-display');
+        const profileEmailDisplay = document.getElementById('profile-email-display');
+        const editProfileButton = document.getElementById('edit-profile-button');
+        const saveProfileButton = document.getElementById('save-profile-button');
+        const cancelEditButton = document.getElementById('cancel-edit-button');
+        const userInfoDisplay = document.getElementById('user-info-display');
+        const userInfoEdit = document.getElementById('user-info-edit');
+        const editUsernameInput = document.getElementById('edit-username');
+        const editEmailInput = document.getElementById('edit-email');
+        const savedPaymentMethodsList = document.getElementById('saved-payment-methods');
+        const noPaymentMethodsMessage = document.getElementById('no-payment-methods-message');
+        const purchaseHistoryList = document.getElementById('purchase-history-list');
+        const noPurchaseHistoryMessage = document.getElementById('no-purchase-history-message');
+
+        function updateProfileDisplay() {
+            // Update profile picture
+            profilePicDisplay.src = userProfile.profilePic;
+            headerProfilePic.src = userProfile.profilePic;
+            mobileHeaderProfilePic.src = userProfile.profilePic;
+
+            // Update welcome message
+            if (userProfile.username) {
+                navWelcomeMessage.textContent = `Hej, ${userProfile.username}`;
+                mobileNavWelcomeMessage.textContent = `Hej, ${userProfile.username}`;
+                navProfileLink.classList.remove('hidden');
+                mobileNavProfileLink.classList.remove('hidden');
+                // Also show/hide edit button based on login
+                if (editProfileButton) editProfileButton.classList.remove('hidden');
+                if (addPaymentMethodButton) addPaymentMethodButton.classList.remove('hidden');
+                if (clearPurchaseHistoryButton) clearPurchaseHistoryButton.classList.remove('hidden');
+            } else {
+                navWelcomeMessage.textContent = ''; // Clear message
+                mobileNavWelcomeMessage.textContent = '';
+                navProfileLink.classList.add('hidden'); // Hide profile link if not logged in
+                mobileNavProfileLink.classList.add('hidden');
+                if (editProfileButton) editProfileButton.classList.add('hidden');
+                if (addPaymentMethodButton) addPaymentMethodButton.classList.add('hidden');
+                if (clearPurchaseHistoryButton) clearPurchaseHistoryButton.classList.add('hidden');
+            }
+            
+
+            // Update user info display (in profile section)
+            if (profileUsernameDisplay) profileUsernameDisplay.textContent = userProfile.username || 'Gæst (log ind for fuld funktionalitet)';
+            if (profileEmailDisplay) profileEmailDisplay.textContent = userProfile.email || 'Ingen email forbundet';
+
+            // Update edit fields
+            if (editUsernameInput) editUsernameInput.value = userProfile.username || '';
+            if (editEmailInput) editEmailInput.value = userProfile.email || '';
+
+            // Update saved payment methods (simulated)
+            if (savedPaymentMethodsList) { // Check if element exists
+                savedPaymentMethodsList.innerHTML = '';
+                if (savedPaymentMethods.length === 0) {
+                    if (noPaymentMethodsMessage) {
+                        noPaymentMethodsMessage.classList.remove('hidden');
+                        savedPaymentMethodsList.appendChild(noPaymentMethodsMessage);
+                    }
+                } else {
+                    if (noPaymentMethodsMessage) noPaymentMethodsMessage.classList.add('hidden');
+                    savedPaymentMethods.forEach((method, index) => {
+                        const li = document.createElement('li');
+                        li.className = 'flex justify-between items-center bg-gray-50 p-3 rounded-md shadow-sm border border-gray-200';
+                        
+                        let iconHtml = '';
+                        let displayText = '';
+                        if (method.type === 'card') {
+                            const cardType = getCardType(method.cardNumber);
+                            if (cardType === 'Visa') {
+                                iconHtml = '<i class="fab fa-cc-visa text-blue-600 text-2xl mr-2"></i>';
+                            } else if (cardType === 'MasterCard') {
+                                iconHtml = '<i class="fab fa-cc-mastercard text-red-600 text-2xl mr-2"></i>';
+                            } else {
+                                iconHtml = '<i class="fas fa-credit-card text-gray-600 text-2xl mr-2"></i>';
+                            }
+                            displayText = `**** ${method.last4Digits}`;
+                        } else if (method.type === 'mobilepay') {
+                            // Using a font-awesome icon or emoji for MobilePay
+                            // You can choose between an icon like this:
+                            iconHtml = '<i class="fas fa-mobile-alt text-green-600 text-2xl mr-2"></i>'; // Mobile phone icon
+                            // Or, if you want a specific emoji:
+                            // iconHtml = '<span class="text-2xl mr-2">📱</span>'; // Example emoji
+                            // Or a custom image if you have one:
+                            // iconHtml = '<img src="path/to/mobilepay-logo.png" alt="MobilePay" class="w-8 h-8 mr-2">';
+                            displayText = `MobilePay: ${method.phoneNumber.replace(/(\d{4})(\d{4})/, '$1 $2')}`;
+                        }
+
+                        li.innerHTML = `
+                            <div class="flex items-center">
+                                ${iconHtml}
+                                <span class="font-semibold text-gray-800">${displayText}</span>
+                                ${method.name ? `<span class="ml-2 text-sm text-gray-500">(${method.name})</span>` : ''}
+                            </div>
+                            <button class="remove-payment-method-btn text-red-500 hover:text-red-700 p-1 rounded-full" data-index="${index}"><i class="fas fa-trash"></i></button>
+                        `;
+                        savedPaymentMethodsList.appendChild(li);
+                    });
+                    document.querySelectorAll('.remove-payment-method-btn').forEach(button => {
+                        button.addEventListener('click', (e) => {
+                            const index = parseInt(e.currentTarget.dataset.index);
+                            savedPaymentMethods.splice(index, 1);
+                            saveUserDataToLocalStorage(); // Save updated methods
+                            updateProfileDisplay();
+                            showAlert('Betalingsmetode fjernet.', 'success');
+                        });
+                    });
+                }
+            }
+
+
+            // Update purchase history
+            if (purchaseHistoryList) { // Check if element exists
+                purchaseHistoryList.innerHTML = '';
+                if (purchaseHistory.length === 0) {
+                    if (noPurchaseHistoryMessage) {
+                        noPurchaseHistoryMessage.classList.remove('hidden');
+                        purchaseHistoryList.appendChild(noPurchaseHistoryMessage);
+                    }
+                } else {
+                    if (noPurchaseHistoryMessage) noPurchaseHistoryMessage.classList.add('hidden');
+                    purchaseHistory.forEach(purchase => {
+                        const li = document.createElement('li');
+                        li.className = 'bg-gray-50 p-3 rounded-md shadow-sm mb-2';
+                        li.innerHTML = `
+                            <p class="font-semibold text-gray-800">Ordre ID: ${purchase.id} (${purchase.date})</p>
+                            <ul class="list-disc list-inside ml-4 text-sm text-gray-600">
+                                ${purchase.items.map(item => `<li>${item.quantity} x ${item.name} (${item.price.toFixed(2)} DKK/stk)</li>`).join('')}
+                            </ul>
+                            <p class="font-bold text-amber-700 mt-2">Total: ${purchase.total} DKK</p>
+                        `;
+                        purchaseHistoryList.appendChild(li);
+                    });
+                }
+            }
+        }
+
+        if (profilePicUpload) {
+            profilePicUpload.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        userProfile.profilePic = e.target.result;
+                        saveUserDataToLocalStorage(); // Save updated profile pic to the user object
+                        saveUserProfile(); // Update the active session profile
+                        updateProfileDisplay();
+                        showAlert('Profilbillede opdateret!', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+
+        if (editProfileButton) {
+            editProfileButton.addEventListener('click', () => {
+                // Only allow editing if logged in
+                if (!isLoggedIn) {
+                    showAlert('Log ind for at redigere din profil.', 'error');
+                    return;
+                }
+                userInfoDisplay.classList.add('hidden');
+                userInfoEdit.classList.remove('hidden');
+                editUsernameInput.value = userProfile.username || '';
+                editEmailInput.value = userProfile.email || '';
+            });
+        }
+
+        if (saveProfileButton) {
+            saveProfileButton.addEventListener('click', () => {
+                const oldUsername = userProfile.username;
+                const newUsername = editUsernameInput.value.trim();
+                const newEmail = editEmailInput.value.trim();
+
+                if (!newUsername) {
+                    showAlert('Brugernavn kan ikke være tomt.', 'error');
+                    return;
+                }
+                if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+                    showAlert('Indtast en gyldig email-adresse.', 'error');
+                    return;
+                }
+
+                let users = JSON.parse(localStorage.getItem('users')) || {};
+                
+                // If username is changed AND the new username already exists by another user
+                if (newUsername !== oldUsername && users[newUsername] && users[newUsername].email !== userProfile.email) {
+                    showAlert('Dette brugernavn er allerede taget.', 'error');
+                    return;
+                }
+
+                // If username is changed, we need to delete the old entry and add a new one
+                if (newUsername !== oldUsername) {
+                    const oldUserData = users[oldUsername] || { password: '', profilePic: userProfile.profilePic, purchaseHistory: purchaseHistory, savedPaymentMethods: savedPaymentMethods };
+                    
+                    delete users[oldUsername]; // Remove old username entry
+
+                    // Add new username entry with existing password and new data
+                    users[newUsername] = {
+                        email: newEmail,
+                        password: oldUserData.password,
+                        profilePic: oldUserData.profilePic, // Preserve existing profile pic
+                        purchaseHistory: oldUserData.purchaseHistory,
+                        savedPaymentMethods: oldUserData.savedPaymentMethods
+                    };
+                } else {
+                    // Username not changed, just update email for existing user
+                    if (users[newUsername]) {
+                        users[newUsername].email = newEmail;
+                    } else {
+                        // This case should ideally not happen if oldUsername exists, but for robustness
+                        users[newUsername] = {
+                            email: newEmail,
+                            password: '', // Assign an empty password if no old user data
+                            profilePic: userProfile.profilePic,
+                            purchaseHistory: purchaseHistory,
+                            savedPaymentMethods: savedPaymentMethods
+                        };
+                    }
+                }
+                
+                localStorage.setItem('users', JSON.stringify(users));
+
+                userProfile.username = newUsername;
+                userProfile.email = newEmail;
+                saveUserProfile(); // Update current session's profile
+                updateProfileDisplay();
+                userInfoDisplay.classList.remove('hidden');
+                userInfoEdit.classList.add('hidden');
+                showAlert('Profil opdateret!', 'success');
+            });
+        }
+
+        if (cancelEditButton) {
+            cancelEditButton.addEventListener('click', () => {
+                // Skift tilbage til visningstilstand uden at gemme ændringer
+                userInfoDisplay.classList.remove('hidden');
+                userInfoEdit.classList.add('hidden');
+                updateProfileDisplay(); // Sørg for at felterne viser de nuværende gemte værdier
+            });
+        }
+
+        if (clearPurchaseHistoryButton) {
+            clearPurchaseHistoryButton.addEventListener('click', () => {
+                if (!isLoggedIn) {
+                    showAlert('Log ind for at slette din købshistorik.', 'error');
+                    loginModal.classList.add('show');
+                    loginModal.classList.remove('hidden');
+                    return;
+                }
+                purchaseHistory = [];
+                saveUserDataToLocalStorage(); // Save updated history
+                updateProfileDisplay();
+                showAlert('Købshistorik er blevet slettet.', 'success');
+            });
+        }
+
+
+        // Add Payment Method Modal Logic
+        addPaymentMethodButton.addEventListener('click', () => {
+            if (!isLoggedIn) {
+                showAlert('Log ind for at tilføje betalingsmetoder.', 'error');
+                loginModal.classList.add('show');
+                loginModal.classList.remove('hidden');
+                return;
+            }
+            addPaymentModal.classList.add('show');
+            addPaymentModal.classList.remove('hidden');
+            addPaymentForm.reset(); // Clear form on open
+            // Ensure card fields are visible by default when opening
+            paymentMethodTypeSelect.value = 'card';
+            cardFields.classList.remove('hidden');
+            mobilepayFields.classList.add('hidden');
+            setPaymentFormRequiredFields('card'); // Set required for card fields initially
+        });
+
+        closeAddPaymentModal.addEventListener('click', () => {
+            addPaymentModal.classList.remove('show');
+            addPaymentModal.classList.add('hidden');
+        });
+
+        // Toggle fields based on payment method type selection
+        paymentMethodTypeSelect.addEventListener('change', (e) => {
+            if (e.target.value === 'card') {
+                cardFields.classList.remove('hidden');
+                mobilepayFields.classList.add('hidden');
+                setPaymentFormRequiredFields('card');
+            } else {
+                cardFields.classList.add('hidden');
+                mobilepayFields.classList.remove('hidden');
+                setPaymentFormRequiredFields('mobilepay');
+            }
+        });
+
+        function setPaymentFormRequiredFields(type) {
+            newCardNumberInput.required = (type === 'card');
+            newExpiryDateInput.required = (type === 'card');
+            newCvvInput.required = (type === 'card');
+            newCardNameInput.required = (type === 'card');
+            newMobilepayPhoneInput.required = (type === 'mobilepay');
+        }
+
+        addPaymentForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const selectedType = paymentMethodTypeSelect.value;
+            let newPaymentMethod = {};
+
+            if (selectedType === 'card') {
+                const cardNumber = newCardNumberInput.value.replace(/\s/g, '');
+                const expiryDate = newExpiryDateInput.value;
+                const cvv = newCvvInput.value;
+                const cardName = newCardNameInput.value;
+
+                if (cardNumber.length < 13 || cardNumber.length > 19 || isNaN(cardNumber)) {
+                    showAlert('Kortnummer skal være mellem 13 og 19 cifre.', 'error');
+                    return;
+                }
+                if (!/^(0[1-9]|1[0-2])\/?([0-9]{2})$/.test(expiryDate)) {
+                    showAlert('Ugyldig udløbsdato (MM/ÅÅ).', 'error');
+                    return;
+                }
+                if (cvv.length < 3 || cvv.length > 4 || isNaN(cvv)) {
+                    showAlert('CVV skal være 3 eller 4 cifre.', 'error');
+                    return;
+                }
+                if (cardName.trim() === '') {
+                    showAlert('Navn på kort må ikke være tomt.', 'error');
+                    return;
+                }
+
+                newPaymentMethod = {
+                    type: 'card',
+                    // Note: In a real app, never store full card numbers. Use tokenization.
+                    cardNumber: cardNumber, 
+                    last4Digits: cardNumber.slice(-4),
+                    expiry: expiryDate,
+                    name: cardName
+                };
+            } else if (selectedType === 'mobilepay') {
+                const phoneNumber = newMobilepayPhoneInput.value;
+                if (!phoneNumber || phoneNumber.length !== 8 || !/^\d{8}$/.test(phoneNumber)) {
+                    showAlert('Ugyldigt telefonnummer til MobilePay. Skal være et 8-cifret nummer.', 'error');
+                    return;
+                }
+                newPaymentMethod = {
+                    type: 'mobilepay',
+                    phoneNumber: phoneNumber
+                };
+            }
+
+            savedPaymentMethods.push(newPaymentMethod);
+            saveUserDataToLocalStorage(); // Save updated methods for the current user
+            updateProfileDisplay();
+            showAlert('Betalingsmetode tilføjet (simuleret)!', 'success');
+            addPaymentModal.classList.remove('show');
+            addPaymentModal.classList.add('hidden');
+            addPaymentForm.reset();
+        });
+
+        // Helper function to determine card type (basic check)
+        function getCardType(cardNumber) {
+            const num = cardNumber.replace(/\s/g, '');
+            if (num.startsWith('4')) {
+                return 'Visa';
+            } else if (num.startsWith('5')) {
+                return 'MasterCard';
+            }
+            return 'Ukendt Kort';
+        }
+
+        // --- Forgot Password Logic ---
+        forgotPasswordButton.addEventListener('click', () => {
+            loginModal.classList.remove('show');
+            loginModal.classList.add('hidden');
+            forgotPasswordModal.classList.add('show');
+            forgotPasswordModal.classList.remove('hidden');
+            forgotPasswordForm.reset();
+            resetPasswordSection.classList.add('hidden'); // Hide reset section initially
+        });
+
+        closeForgotPasswordModal.addEventListener('click', () => {
+            forgotPasswordModal.classList.remove('show');
+            forgotPasswordModal.classList.add('hidden');
+        });
+
+        forgotPasswordForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = forgotEmailInput.value;
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            
+            // Find user by email (simulated)
+            let foundUsername = null;
+            for (const username in users) {
+                if (users[username].email === email) {
+                    foundUsername = username;
+                    break;
+                }
+            }
+
+            if (foundUsername) {
+                showAlert(`En nulstillingslink er sendt til ${email} (simuleret).`, 'success');
+                resetPasswordSection.classList.remove('hidden'); // Show reset password section
+                resetUsernameInput.value = foundUsername; // Pre-fill username for convenience
+            } else {
+                showAlert('Ingen konto fundet med denne email-adresse.', 'error');
+                resetPasswordSection.classList.add('hidden'); // Hide reset section if email not found
+            }
+        });
+
+        confirmResetPasswordButton.addEventListener('click', () => {
+            const usernameToReset = resetUsernameInput.value.trim();
+            const newPassword = resetPasswordInput.value;
+            const confirmNewPassword = resetConfirmPasswordInput.value;
+
+            if (!usernameToReset) {
+                showAlert('Brugernavn må ikke være tomt.', 'error');
+                return;
+            }
+            if (newPassword !== confirmNewPassword) {
+                showAlert('Nye adgangskoder matcher ikke.', 'error');
+                return;
+            }
+            if (newPassword.length < 6) {
+                showAlert('Adgangskoden skal være mindst 6 tegn lang.', 'error');
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            if (users[usernameToReset]) {
+                users[usernameToReset].password = newPassword;
+                localStorage.setItem('users', JSON.stringify(users));
+                showAlert('Adgangskode er blevet nulstillet!', 'success');
+                forgotPasswordModal.classList.remove('show');
+                forgotPasswordModal.classList.add('hidden');
+                loginModal.classList.add('show'); // Redirect to login
+                loginModal.classList.remove('hidden');
+            } else {
+                showAlert('Brugernavn blev ikke fundet. Prøv igen.', 'error');
+            }
+        });
+
+        // --- Toggle Password Visibility Logic ---
+        document.querySelectorAll('.toggle-password-visibility').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const targetId = e.currentTarget.dataset.target;
+                const passwordInput = document.getElementById(targetId);
+                const icon = e.currentTarget.querySelector('i');
+
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+
+
+        // Initialisering ved indlæsning af siden
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize users in localStorage if it's empty, with a default user
+            let users = JSON.parse(localStorage.getItem('users')) || {};
+            if (Object.keys(users).length === 0) {
+                users['testuser'] = { email: 'test@example.com', password: 'password', profilePic: 'https://via.placeholder.com/50/FFD700/FFFFFF?text=T', purchaseHistory: [], savedPaymentMethods: [] };
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+            
+            // Load user-specific data after checking for login status
+            loadUserDataFromLocalStorage(); // This will load history and payment methods if logged in
+
+            updateCartDisplay();
+            updateNavVisibility(); // Sørg for profil-navn/billede er sat
+            updateProfileDisplay(); // Sørg for at profil-sektionen viser korrekt data ved start
+            
+            // Håndter direkte links med hash i URL'en (f.eks. example.com/#about)
+            if (window.location.hash) {
+                const initialSectionId = window.location.hash.substring(1);
+                // Kontroller om sektionen findes og har klassen 'content-section'
+                if (document.getElementById(initialSectionId) && document.getElementById(initialSectionId).classList.contains('content-section')) {
+                    showSection(initialSectionId);
+                } else {
+                    showSection('home'); // Hvis hash peger på ikke-eksisterende sektion, gå til hjem
+                }
+            } else {
+                showSection('home'); // Hvis ingen hash, vis 'home' som standard
+            }
+        });
+
+        function updateNavVisibility() {
+            // Desktop navigation
+            if (isLoggedIn) {
+                navProfileLink.classList.remove('hidden');
+                loginNavItem.classList.add('hidden');
+                registerNavItem.classList.add('hidden');
+                logoutNavItem.classList.remove('hidden');
+                navWelcomeMessage.textContent = `Hej, ${userProfile.username}`;
+                headerProfilePic.src = userProfile.profilePic;
+            } else {
+                navProfileLink.classList.add('hidden');
+                loginNavItem.classList.remove('hidden');
+                registerNavItem.classList.remove('hidden');
+                logoutNavItem.classList.add('hidden');
+                // Reset profile pic if not logged in
+                headerProfilePic.src = 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P'; 
+            }
+
+            // Mobile navigation
+            if (isLoggedIn) {
+                mobileNavProfileLink.classList.remove('hidden');
+                mobileLoginNavItem.classList.add('hidden');
+                mobileRegisterNavItem.classList.add('hidden');
+                mobileLogoutNavItem.classList.remove('hidden');
+                mobileNavWelcomeMessage.textContent = `Hej, ${userProfile.username}`;
+                mobileHeaderProfilePic.src = userProfile.profilePic;
+            } else {
+                mobileNavProfileLink.classList.add('hidden');
+                mobileLoginNavItem.classList.remove('hidden');
+                mobileRegisterNavItem.classList.remove('hidden');
+                mobileLogoutNavItem.classList.add('hidden');
+                 // Reset profile pic if not logged in
+                mobileHeaderProfilePic.src = 'https://via.placeholder.com/50/FFD700/FFFFFF?text=P';
+            }
+        }
+    </script>
+</body>
+</html>
